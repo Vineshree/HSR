@@ -1,27 +1,40 @@
-# HSR
-This repository implements a numerical framework for analyzing the phase-space dynamics of  the early universe. Specifically, it provides a consistent method for closing the  Hubble Slow-Roll (HSR) hierarchy by enforcing observational constraints from the  scalar spectral index ($n_s$) directly into the flow equations.
+# Hubble Slow-Roll (HSR) Flow Framework
 
-# Research Context
-In standard HSR formalism, higher-order flow parameters (e.g., ${}^3\lambda_H$) are 
-often arbitrarily truncated, leading to potential dynamical inconsistencies. This 
-implementation utilizes a second-order observable manifold, $R(N)$, to analytically 
-derive ${}^3\lambda_H$ at every point in the inflationary phase space.
+A modular Python framework for simulating inflationary universes using the Hubble Slow-Roll hierarchy and Algebraic Closure Models (ACM). This repository replicates and extends results from Kinney (2002) and Chen et al., providing a robust engine for Monte Carlo exploration of the $n_s - r$ plane.
 
-## Technical Implementation
-* **Hamilton-Jacobi Formalism**: The solver treats the Hubble parameter $H(\phi)$ as the 
-    fundamental dynamical quantity, ensuring a potential-independent analysis of inflation.
-* **Stiff ODE Integration**: Due to the coupling of the flow parameters, the resulting 
-    system is numerically stiff. This implementation utilizes the **Backward 
-    Differentiation Formula (BDF)** via `scipy.integrate.solve_ivp` to ensure 
-    stability and convergence.
-* **Modular Architecture**:
-    * `physics.py`: Contains the algebraic derivation of the higher-order parameters.
-    * `simulation.py`: The integration engine and parameter configuration.
-    * `visualization.py`: Tools for generating phase-space portraits, attractors, 
-        and nullclines.
+---
 
-## Key Features
-- **Observationally-Driven**: Trajectories are pinned to the $n_s - 1 \approx -2/N$ 
-  large-$N$ scaling characteristic of Starobinsky-like inflation.
-- **Phase-Space Mapping**: Functions to visualize the evolution of $\epsilon$, $\sigma$, 
-  and ${}^2\lambda_H$ to identify stable inflationary attractors.
+## 1. Project Architecture
+The project is structured to separate physical laws from numerical execution, following professional software engineering standards:
+
+* **`src/physics/dynamics.py`**: The "Physics Engine." Contains the `HSRSolver` class which defines the differential equations for the HSR hierarchy and the specialized math for Algebraic Closure (ACM).
+* **`src/physics/simulation.py`**: The "Execution Layer." Contains the `MonteCarloRunner` class. It manages `solve_ivp` integration, including forward/backward integration and trajectory tracking.
+* **`src/visualization/plots.py`**: The "Analysis Layer." Dedicated module for generating publication-quality visualizations, theoretical attractor lines, and observational target regions.
+
+
+
+---
+
+## 2. Physics & Methodology
+
+### HSR Hierarchy
+The framework evolves the slow-roll parameters $\epsilon, \sigma, \lambda_2, \dots, \lambda_l$ as functions of the number of e-folds $N$. The system is truncated at a specified order $M$, with initial conditions following the **Kinney (2002)** hierarchical scaling where parameter ranges shrink by a factor of 10 for each higher order.
+
+### Integration Modes
+1.  **Forward Integration**: Direct evolution from initial conditions to a fixed number of e-folds.
+2.  **Backward Integration**: Evolving forward to find the end of inflation ($\epsilon=1$), then "rewinding" back $N_{obs}$ e-folds to calculate observables at the horizon crossing.
+3.  **Algebraic Closure (ACM)**: Uses the physical constraint $dR/dN = R^2/2$ to close the hierarchy, forcing chaotic models to converge onto the Starobinsky/$R^2$ attractor.
+
+---
+
+## 3. Installation
+
+To set up the environment and install the package in "editable" mode (so changes to `src` are immediately reflected in your notebooks):
+
+```bash
+# Clone the repository
+git clone [https://github.com/yourusername/HSR-Flow.git](https://github.com/yourusername/HSR-Flow.git)
+cd HSR-Flow
+
+# Install in editable mode
+pip install -e .
