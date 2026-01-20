@@ -1,8 +1,30 @@
 import numpy as np
 
 class HSRSolver:
-    def __init__(self, c_const: float = -0.7296): # Default C_CONST
+    def __init__(self, c_const=0.0814514):
         self.c_const = c_const
+        # ACM coefficients
+        self.alpha = (3 - c_const)
+        self.beta = -(5 - 3 * c_const)
+        self.delta = -0.25 * (3 - 5 * c_const)
+
+    def get_derivatives_acm(self, N, y):
+        """3-D ACM Flow Equations with Algebraic Closure."""
+        epsilon, sigma, lambda_2 = y
+        
+        d_eps_dN = epsilon * (sigma + 2 * epsilon)
+        d_sigma_dN = -epsilon * (5 * sigma + 12 * epsilon) + 2 * lambda_2
+
+        # The ACM Closure Logic
+        R_y = sigma + self.beta * epsilon**2 + self.delta * sigma * epsilon + self.alpha * lambda_2
+        G_y = (d_sigma_dN + 2 * self.beta * epsilon * d_eps_dN + 
+               self.delta * (sigma * d_eps_dN + epsilon * d_sigma_dN) + 
+               self.alpha * 0.5 * sigma * lambda_2)
+        
+        lambda_3_closed = (1.0 / self.alpha) * (0.5 * R_y**2 - G_y)
+        d_lambda2_dN = 0.5 * sigma * lambda_2 + lambda_3_closed
+        
+        return [d_eps_dN, d_sigma_dN, d_lambda2_dN]
 
     def get_derivatives(self, t, y):
         epsilon = y[0]

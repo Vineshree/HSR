@@ -67,3 +67,13 @@ class MonteCarloRunner:
             if ns is not None:
                 results.append([ns, r])
         return np.array(results)
+    def run_trajectory(self, y0, method='acm', n_max=75):
+        """Runs a single trajectory and returns the full solver object (sol)."""
+        func = self.solver.get_derivatives_acm if method == 'acm' else self.solver.get_derivatives
+        
+        def event_end(t, y): return y[0] - 1.0
+        event_end.terminal = True
+        
+        sol = solve_ivp(func, (0, n_max), y0, t_eval=np.linspace(0, n_max, 500),
+                        events=event_end, method='Radau', rtol=1e-8, atol=1e-10)
+        return sol

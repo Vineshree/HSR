@@ -18,7 +18,7 @@ def plot_hsr_results(ns_vals, r_vals, m_order, show_power_law=True):
     if show_power_law:
         r_line = np.geomspace(1e-10, 0.4, 100)
         ns_line = 1 - 2 * r_line / (1 - r_line)
-        plt.plot(ns_line, r_line, 'r-', lw=2, label='Power-Law Fixed Point')
+        plt.plot (ns_line, r_line, 'r-', lw=2, label='Power-Law Fixed Point')
     
     # 4. Professional Formatting
     plt.xlabel(r'Spectral Index $n_s$', fontsize=12)
@@ -31,3 +31,23 @@ def plot_hsr_results(ns_vals, r_vals, m_order, show_power_law=True):
     plt.grid(True, which="both", ls="-", alpha=0.2)
     
     return plt
+def plot_acm_trajectories(solutions):
+    """Creates a 3-panel plot showing parameter evolution."""
+    fig, axes = plt.subplots(1, 3, figsize=(18, 5))
+    colors = plt.cm.plasma(np.linspace(0, 1, len(solutions)))
+
+    for i, sol in enumerate(solutions):
+        axes[0].plot(sol.t, sol.y[0], color=colors[i], lw=1.5)
+        axes[1].plot(sol.t, sol.y[1], color=colors[i], lw=1.5)
+        axes[2].plot(sol.t, sol.y[2], color=colors[i], lw=1.5)
+
+    axes[0].set_ylabel(r'$\epsilon(N)$')
+    axes[1].set_ylabel(r'$\sigma(N)$')
+    axes[2].set_ylabel(r'${}^2\lambda_H(N)$')
+    
+    for ax in axes:
+        ax.set_xlabel('N (e-folds)')
+        ax.grid(True, alpha=0.3)
+    
+    plt.tight_layout()
+    return fig
