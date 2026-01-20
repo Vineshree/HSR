@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hsr_flow"
+version = "0.1.0"
+description = "Second-order HSR flow equations and observables"
+dependencies = [
+    "numpy",
+    "scipy",
+    "matplotlib",
+    "tqdm"
+]
