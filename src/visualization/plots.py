@@ -1,36 +1,33 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-def set_publication_style():
-    """Sets matplotlib parameters to CCM/Academic standards."""
-    plt.rcParams.update({
-        "text.usetex": True,      # Requires a LaTeX distribution
-        "font.family": "serif",
-        "axes.labelsize": 12,
-        "legend.fontsize": 10,
-        "figure.dpi": 150
-    })
-
-def plot_ns_r_reconstruction(ns_results, r_results, valid_runs, save_path=None):
-    """Generates the Figure 3 style scatter plot."""
-    set_publication_style()
+def plot_hsr_results(ns_vals, r_vals, m_order, show_power_law=True):
+    """
+    Generates a professional n_s vs r scatter plot.
+    """
+    plt.figure(figsize=(10, 7))
     
-    plt.figure(figsize=(9, 7))
-    plt.scatter(ns_results, r_results, s=2, alpha=0.5, color='#0077AA', 
-                label=f'Simulated Models (n={valid_runs})')
-
-    # Overplot the power-law inflation relation
-    r_line = np.linspace(0.001, 16, 500)
-    ns_line = 1 - (2 * r_line) / (16 - r_line)
-    plt.plot(ns_line, r_line, color='red', linestyle='-', linewidth=1.5, label='Power-Law')
-
-    plt.xlabel(r'$n_s$')
-    plt.ylabel(r'$r$')
-    plt.xlim(0.4, 1.1)
-    plt.ylim(0, 4)
-    plt.legend(loc='lower left')
-    plt.grid(True, linestyle='--', alpha=0.6)
+    # 1. Filter outliers for a clean view
+    mask = (r_vals < 10) & (ns_vals > 0.4) & (ns_vals < 1.4)
     
-    if save_path:
-        plt.savefig(save_path)
-    plt.show()
+    # 2. Main Scatter Plot
+    plt.scatter(ns_vals[mask], r_vals[mask], s=3, c='black', 
+                alpha=0.6, label=f'Flow Models M={m_order}')
+    
+    # 3. Add the Red Power-Law Reference Line (from your notebook)
+    if show_power_law:
+        r_line = np.geomspace(1e-10, 0.4, 100)
+        ns_line = 1 - 2 * r_line / (1 - r_line)
+        plt.plot(ns_line, r_line, 'r-', lw=2, label='Power-Law Fixed Point')
+    
+    # 4. Professional Formatting
+    plt.xlabel(r'Spectral Index $n_s$', fontsize=12)
+    plt.ylabel(r'Tensor-to-Scalar Ratio $r$', fontsize=12)
+    plt.yscale('log')
+    plt.title(f'Inflationary Flow Reconstruction (M={m_order})', fontsize=14)
+    plt.xlim(0.8, 1.1)  # Focused on the Planck region
+    plt.ylim(1e-5, 1)
+    plt.legend()
+    plt.grid(True, which="both", ls="-", alpha=0.2)
+    
+    return plt
