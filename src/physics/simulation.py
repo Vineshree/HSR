@@ -1,4 +1,5 @@
 import numpy as np
+from tqdm import tqdm # Make sure to pip install tqdm
 from scipy.integrate import solve_ivp
 from .dynamics import HSRSolver
 
@@ -54,3 +55,39 @@ class MonteCarloRunner:
 
         except Exception:
             return None, None
+
+    def generate_random_priors(self, l_max=10, epsilon_max=0.8):
+        """
+        Generates a random initial state vector y_initial.
+        Values are typically drawn from a uniform distribution (Priors).
+        """
+        # epsilon must be between 0 and 1 for inflation to happen
+        eps = np.random.uniform(0.0001, epsilon_max)
+        
+        # sigma and higher lambdas are usually small
+        sigma = np.random.uniform(-0.1, 0.1)
+        
+        # Higher order terms (lambda_2 to lambda_l)
+        higher_lambdas = np.random.uniform(-0.005, 0.005, size=l_max-2)
+        
+        # Combine into the y_initial vector
+        return np.concatenate(([eps, sigma], higher_lambdas))
+    def run_batch(self, n_runs: int, l_max: int = 10, n_obs: float = 55.0):
+        """Runs a large batch of simulations and returns valid results."""
+        ns_results = []
+        r_results = []
+
+        # The progress bar is a life-saver for 125,000 runs
+        for _ in tqdm(range(n_runs), desc="Simulating HSR Flow"):
+            # 1. Generate new priors for every run
+            y_init = self.generate_random_priors(l_max=l_max)
+            
+            # 2. Run the physics engine
+            ns, r = self.run_single(y_init, n_obs=n_obs)
+            
+            # 3. Only save if the simulation was physically valid
+            if ns is not None and r is not None:
+                ns_results.append(ns)
+                r_results.append(r)
+                
+        return np.array(ns_results), np.array(r_results)
