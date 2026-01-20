@@ -15,9 +15,9 @@ derive ${}^3\lambda_H$ at every point in the inflationary phase space.
     Differentiation Formula (BDF)** via `scipy.integrate.solve_ivp` to ensure 
     stability and convergence.
 * **Modular Architecture**:
-    * `closure_logic.py`: Contains the algebraic derivation of the higher-order parameters.
-    * `solver_main.py`: The integration engine and parameter configuration.
-    * `visualization.ipynb`: Tools for generating phase-space portraits, attractors, 
+    * `physics.py`: Contains the algebraic derivation of the higher-order parameters.
+    * `simulation.py`: The integration engine and parameter configuration.
+    * `visualization.py`: Tools for generating phase-space portraits, attractors, 
         and nullclines.
 
 ## Key Features
