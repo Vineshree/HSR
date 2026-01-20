@@ -77,3 +77,28 @@ class MonteCarloRunner:
         sol = solve_ivp(func, (0, n_max), y0, t_eval=np.linspace(0, n_max, 500),
                         events=event_end, method='Radau', rtol=1e-8, atol=1e-10)
         return sol
+    def run_batch_acm(self, n_sims, n_obs=55):
+        """
+        Notebook 4 Logic: Guided ACM simulations.
+        Returns ns and r for models where inflation lasts > n_obs.
+        """
+        results = []
+        for _ in tqdm(range(n_sims), desc="Running Guided ACM"):
+            # Random starting conditions for epsilon, sigma, lambda_2
+            y0 = [np.random.uniform(0.0001, 0.1), 
+                  np.random.uniform(-0.2, 0.2), 
+                  np.random.uniform(-0.01, 0.01)]
+            
+            sol = self.run_trajectory(y0, method='acm', n_max=200)
+            
+            # Check if inflation lasted long enough (e.g., 55 e-folds)
+            if sol.t[-1] > n_obs:
+                # Find the index corresponding to n_obs before the end
+                target_t = sol.t[-1] - n_obs
+                idx = np.argmin(np.abs(sol.t - target_t))
+                
+                y_obs = sol.y[:, idx]
+                ns, r = self.solver.compute_observables(y_obs)
+                results.append([ns, r])
+                
+        return np.array(results)

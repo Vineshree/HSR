@@ -51,3 +51,26 @@ def plot_acm_trajectories(solutions):
     
     plt.tight_layout()
     return fig
+def plot_acm_comparison(ns_vals, r_vals):
+    plt.figure(figsize=(10, 7))
+    
+    # 1. Plot ACM results
+    plt.scatter(ns_vals, r_vals, s=10, alpha=0.5, color='blue', 
+                label=f'ACM Results ({len(ns_vals)} models)')
+
+    # 2. Analytical Starobinsky Line: ns = 1 - 2/N, r = 12/N^2
+    N_line = np.linspace(45, 75, 100)
+    plt.plot(1 - 2/N_line, 12/(N_line**2), color='red', lw=2.5, 
+             label=r'Theoretical $R^2$ Attractor')
+
+    # 3. Planck 2018 Target Region
+    plt.axvspan(0.961, 0.969, color='green', alpha=0.15, label='Planck $n_s$ 95% CL')
+
+    plt.title("ACM Method: Chaos Collapsed to the Attractor", fontsize=14)
+    plt.xlabel(r"$n_s$")
+    plt.ylabel(r"$r$")
+    plt.xlim(0.94, 1.0)
+    plt.ylim(0, 0.02)
+    plt.legend()
+    plt.grid(True, alpha=0.2)
+    return plt
