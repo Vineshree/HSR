@@ -1,3 +1,10 @@
+import sys
+import os
+import numpy as np
+
+# Adds the parent directory to the python path
+sys.path.append(os.path.abspath('../'))
+
 import numpy as np
 import pytest
 from src.physics.dynamics import HSRSolver
@@ -23,17 +30,18 @@ def test_first_order_ns_approximation():
     (n_s - 1 approx sigma)
     """
     solver = HSRSolver()
-    eps = 1e-9
-    sigma = -0.04
-    xi = 0.0
+    # Create the state vector y = [epsilon, sigma, lambda2]
+    y = [1e-9, -0.04, 0.0]
     
-    ns, r = solver.compute_observables(eps, sigma, xi)
+    ns, r = solver.compute_observables(y)
     
-    # Check if (ns - 1) is close to sigma
-    assert np.isclose(ns - 1, sigma, atol=1e-3), "Second-order ns deviates too far from first-order limit."
+    # ns should be approx 1 + (-0.04) = 0.96
+    assert ns == pytest.approx(0.96, rel=1e-3)
 
 def test_r_positivity():
     """The tensor-to-scalar ratio r must always be positive for physical inflation."""
     solver = HSRSolver()
-    ns, r = solver.compute_observables(eps=0.01, sigma=-0.02, xi=0.001)
-    assert r > 0, "Non-physical result: r cannot be negative."
+    y = [0.01, -0.02, 0.001]
+    
+    ns, r = solver.compute_observables(y)
+    assert r > 0

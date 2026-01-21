@@ -74,3 +74,30 @@ def plot_acm_comparison(ns_vals, r_vals):
     plt.legend()
     plt.grid(True, alpha=0.2)
     return plt
+def plot_efstathiou_landscape(ns_vals, r_vals, m_order):
+    """
+    Visualizes the broad stochastic landscape with Efstathiou's 
+    preferred observational window.
+    """
+    plt.figure(figsize=(10, 7))
+    
+    # 1. Scatter the stochastic results
+    plt.scatter(ns_vals, r_vals, s=2, c='gray', alpha=0.3, label='Stochastic Landscape')
+    
+    # 2. Highlight the 'Efstathiou/Planck' Preferred Region (n_s ~ 0.96)
+    plt.axvspan(0.958, 0.968, color='blue', alpha=0.1, label='Efstathiou/Bond Window')
+    
+    # 3. Add the Red Power-Law Line for context
+    r_line = np.geomspace(1e-10, 0.4, 100)
+    ns_line = 1 - 2 * r_line / (1 - r_line)
+    plt.plot(ns_line, r_line, 'r--', lw=1, label='Power-Law Limit')
+
+    plt.xlabel(r'Spectral Index $n_s$')
+    plt.ylabel(r'Tensor-to-Scalar Ratio $r$')
+    plt.yscale('log')
+    plt.title(f'Inflationary Flow Landscape (M={m_order})')
+    plt.xlim(0.85, 1.05)
+    plt.ylim(1e-6, 1)
+    plt.legend()
+    plt.grid(True, alpha=0.2)
+    return plt

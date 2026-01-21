@@ -32,7 +32,28 @@ class MonteCarloRunner:
         if y_final[0] < 1.0:
             return self.solver.compute_observables(y_final)
         return None, None
-
+    
+    def run_stochastic_search(self, m_order, n_min=40, n_max=70):
+        """
+        Reflects Notebook 1: The exploratory 'Kinney-style' search.
+        Seeds at N=0 and integrates forward to check for Graceful Exit.
+        """
+        y0 = self.generate_random_priors(m_order)
+        
+        def event_exit(t, y): return y[0] - 1.0
+        event_exit.terminal = True
+        
+        sol = solve_ivp(self.solver.get_derivatives, (0, n_max), y0, 
+                        events=event_exit, rtol=1e-6, atol=1e-8)
+        
+        # If it hit epsilon=1 within the 40-70 e-fold window
+        if sol.t_events[0].size > 0:
+            n_total = sol.t_events[0][0]
+            if n_min <= n_total <= n_max:
+                return self.solver.compute_observables(y0)
+        
+        return None, None
+    
     def run_single_backwards(self, m_order, n_obs_range=(40, 70)):
         """
         Notebook 2 Logic: Forward-then-Backward.
@@ -55,18 +76,26 @@ class MonteCarloRunner:
             return self.solver.compute_observables(sol_bwd.y[:, -1])
         return None, None
 
-    def run_batch(self, n_sims, m_order, method='backwards'):
-        """Main interface for all notebooks."""
+    def run_batch(self, n_sims, m_order, method='stochastic'):
+        """
+        The Master Batch Controller.
+        method='stochastic' -> The Efstathiou/Kinney Landscape (Forward Search)
+        method='backwards'  -> The Chen Modern Reconstruction (Backward Integration)
+        """
         results = []
-        for _ in tqdm(range(n_sims), desc=f"Running {method} sim"):
-            if method == 'backwards':
+        for _ in tqdm(range(n_sims), desc=f"Running {method} batch"):
+            # Route to the specific physics logic
+            if method == 'stochastic':
+                ns, r = self.run_stochastic_search(m_order)
+            elif method == 'backwards':
                 ns, r = self.run_single_backwards(m_order)
-            else:
-                ns, r = self.run_single_forward(m_order)
             
+            # Only save the data if the simulation was "Physical"
             if ns is not None:
                 results.append([ns, r])
+                
         return np.array(results)
+    
     def run_trajectory(self, y0, method='acm', n_max=75):
         """Runs a single trajectory and returns the full solver object (sol)."""
         func = self.solver.get_derivatives_acm if method == 'acm' else self.solver.get_derivatives
@@ -77,6 +106,7 @@ class MonteCarloRunner:
         sol = solve_ivp(func, (0, n_max), y0, t_eval=np.linspace(0, n_max, 500),
                         events=event_end, method='Radau', rtol=1e-8, atol=1e-10)
         return sol
+    
     def run_batch_acm(self, n_sims, n_obs=55):
         """
         Notebook 4 Logic: Guided ACM simulations.
