@@ -1,6 +1,8 @@
 # Hubble Slow-Roll (HSR) Flow Framework
 
-A modular Python framework for simulating inflationary universes using the Hubble Slow-Roll hierarchy and Algebraic Closure Models (ACM). This repository replicates and extends results from Kinney (2002) and Chen et al., providing a robust engine for Monte Carlo exploration of the $n_s - r$ plane.
+A modular Python framework for simulating inflationary universes using the Hubble Slow-Roll hierarchy and Algebraic Closure Models (ACM). This repository replicates and extends results from Kinney (2002) ( 	
+https://doi.org/10.48550/arXiv.astro-ph/0206032) and Chongchitnan (2005), et al. ( 	
+https://doi.org/10.48550/arXiv.astro-ph/0508355), providing a robust engine for Monte Carlo exploration of the $n_s - r$ plane.
 
 ---
 
