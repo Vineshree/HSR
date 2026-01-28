@@ -1,10 +1,30 @@
 import numpy as np
 from scipy.integrate import solve_ivp
+from scipy.optimize import root
+import scipy.linalg as la
 from tqdm import tqdm
 
 class MonteCarloRunner:
     def __init__(self, solver):
         self.solver = solver
+
+    def run_stability_analysis(self):
+        """
+        Computes the fixed point and eigenvalues of the ACM system.
+        This explains the 'vertical' nature of the chaos collapse.
+        """
+        # Small guess near the slow-roll attractor
+        guess = [1e-6, -2e-6, 1e-12]
+        
+        # Levenberg-Marquardt handles the center manifold (λ=0) better than fsolve
+        sol = root(lambda y: self.solver.get_derivatives_acm(0, y), guess, method='lm')
+        f_point = sol.x
+        
+        # Compute Jacobian using the solver's method
+        J = self.solver.get_jacobian_acm(f_point)
+        eigvals = la.eigvals(J)
+        
+        return f_point, eigvals
 
     def generate_random_priors(self, m_order):
         """Kinney (2002) scaling: ranges shrink by factor of 10 for each higher order."""
@@ -96,39 +116,43 @@ class MonteCarloRunner:
                 
         return np.array(results)
     
-    def run_trajectory(self, y0, method='acm', n_max=75):
-        """Runs a single trajectory and returns the full solver object (sol)."""
+    def run_trajectory(self, y0, method='acm', n_max=100):
+        """Runs a single trajectory using the specified dynamics engine."""
         func = self.solver.get_derivatives_acm if method == 'acm' else self.solver.get_derivatives
         
         def event_end(t, y): return y[0] - 1.0
         event_end.terminal = True
         
-        sol = solve_ivp(func, (0, n_max), y0, t_eval=np.linspace(0, n_max, 500),
+        # Using Radau for ACM as it handles potential stiffness near epsilon=1
+        sol = solve_ivp(func, (0, n_max), y0, t_eval=np.linspace(0, n_max, 250),
                         events=event_end, method='Radau', rtol=1e-8, atol=1e-10)
         return sol
     
     def run_batch_acm(self, n_sims, n_obs=55):
         """
-        Notebook 4 Logic: Guided ACM simulations.
-        Returns ns and r for models where inflation lasts > n_obs.
+        Simulates the Chaos Collapse.
+        Evolves trajectories and calculates observables at N_obs before end.
         """
         results = []
         for _ in tqdm(range(n_sims), desc="Running Guided ACM"):
-            # Random starting conditions for epsilon, sigma, lambda_2
-            y0 = [np.random.uniform(0.0001, 0.1), 
-                  np.random.uniform(-0.2, 0.2), 
-                  np.random.uniform(-0.01, 0.01)]
+            # Sample initial conditions for the 3rd order system
+            # Note: Ranges are chosen to explore the vertical manifold
+            y0 = [np.random.uniform(0, 0.8),  # epsilon_0
+                  np.random.uniform(-0.05, 0.05), # sigma_0
+                  np.random.uniform(-0.001, 0.001)] # lambda_2_0
             
-            sol = self.run_trajectory(y0, method='acm', n_max=200)
+            sol = self.run_trajectory(y0, method='acm', n_max=250)
             
-            # Check if inflation lasted long enough (e.g., 55 e-folds)
-            if sol.t[-1] > n_obs:
-                # Find the index corresponding to n_obs before the end
-                target_t = sol.t[-1] - n_obs
-                idx = np.argmin(np.abs(sol.t - target_t))
-                
-                y_obs = sol.y[:, idx]
-                ns, r = self.solver.compute_observables(y_obs)
-                results.append([ns, r])
+            # Logic: If inflation ends at N_end, we want data from N_end - 55
+            if sol.t_events[0].size > 0:
+                n_end = sol.t_events[0][0]
+                if n_end > n_obs:
+                    target_t = n_end - n_obs
+                    # Interpolate or find closest index to N_obs
+                    idx = np.argmin(np.abs(sol.t - target_t))
+                    
+                    y_at_obs = sol.y[:, idx]
+                    ns, r = self.solver.compute_observables(y_at_obs)
+                    results.append([ns, r])
                 
         return np.array(results)

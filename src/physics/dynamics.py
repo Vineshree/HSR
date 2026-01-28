@@ -26,6 +26,56 @@ class HSRSolver:
         
         return [d_eps_dN, d_sigma_dN, d_lambda2_dN]
 
+    def get_jacobian_acm(self, y, step=1e-9):
+        """
+        Computes the Jacobian matrix for the ACM system at state y.
+        Useful for stability analysis and eigenvalue decomposition.
+        """
+        n = len(y)
+        jac = np.zeros((n, n))
+        # N is typically 0 for local stability analysis
+        f0 = np.array(self.get_derivatives_acm(0, y))
+        
+        for j in range(n):
+            dy = np.zeros(n)
+            dy[j] = step
+            f1 = np.array(self.get_derivatives_acm(0, y + dy))
+            jac[:, j] = (f1 - f0) / step
+            
+        return jac
+    
+    def find_attractor_slope(solver, eps_val):
+        # Construct a state that sits on the theoretical attractor
+        y_attractor = np.array([eps_val, -2*eps_val, eps_val**2])
+    
+        # Get the Jacobian at this point
+        J = solver.get_jacobian_acm(y_attractor)
+    
+        # Get eigenvalues and eigenvectors
+        eigvals, eigvecs = np.linalg.eig(J)
+    
+        # The eigenvector corresponding to the eigenvalue closest to 0 
+        # is the direction of your blue line (the attractor manifold).
+        idx = np.argmin(np.abs(eigvals))
+        slope_vector = eigvecs[:, idx]
+    
+        return eigvals, slope_vector
+
+    def compute_observables(self, y):
+        eps = y[0]
+        sig = y[1]
+        lam2 = y[2] if len(y) > 2 else 0
+        
+        # Higher-order r and ns calculation from Efstathiou
+        r = 16 * eps * (1 - self.c_const * (sig + 2 * eps)) 
+        #r = 16 * eps
+
+        delta_ns = sig - (5 - 3 * self.c_const) * (eps**2) \
+                   - 0.25 * (3 - 5 * self.c_const) * sig * eps \
+                   + 0.5 * (3 - self.c_const) * lam2
+        
+        return 1 + delta_ns, r
+
     def get_derivatives(self, t, y):
         epsilon = y[0]
         sigma = y[1]
@@ -47,15 +97,4 @@ class HSRSolver:
             
         return dydN
 
-    def compute_observables(self, y):
-        eps = y[0]
-        sig = y[1]
-        lam2 = y[2] if len(y) > 2 else 0
-        
-        # Higher-order r and ns calculation
-        r = 16 * eps * (1 - self.c_const * (sig + 2 * eps))
-        delta_ns = sig - (5 - 3 * self.c_const) * (eps**2) \
-                   - 0.25 * (3 - 5 * self.c_const) * sig * eps \
-                   + 0.5 * (3 - self.c_const) * lam2
-        
-        return 1 + delta_ns, r
+    
