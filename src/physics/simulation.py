@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.integrate import solve_ivp
+from scipy.interpolate import interp1d
 from scipy.optimize import root
 import scipy.linalg as la
 from tqdm import tqdm
@@ -27,7 +28,7 @@ class MonteCarloRunner:
         return f_point, eigvals
 
     def generate_random_priors(self, m_order):
-        """Kinney (2002) scaling: ranges shrink by factor of 10 for each higher order."""
+        """Efstathiou (2002) scaling: ranges shrink by factor of 10 for each higher order."""
         y = np.zeros(m_order + 1)
         y[0] = np.random.uniform(0, 0.8)   # epsilon
         y[1] = np.random.uniform(-0.5, 0.5) # sigma
@@ -40,7 +41,7 @@ class MonteCarloRunner:
 
     def run_single_forward(self, m_order, n_obs=55):
         """
-        Notebook 1 Logic: Simple forward integration.
+        Simple forward integration.
         Integrates for exactly n_obs e-folds and takes the result.
         """
         y0 = self.generate_random_priors(m_order)
@@ -55,7 +56,7 @@ class MonteCarloRunner:
     
     def run_stochastic_search(self, m_order, n_min=40, n_max=70):
         """
-        Reflects Notebook 1: The exploratory 'Kinney-style' search.
+        The exploratory 'Efstathiou-style' search.
         Seeds at N=0 and integrates forward to check for Graceful Exit.
         """
         y0 = self.generate_random_priors(m_order)
@@ -64,7 +65,7 @@ class MonteCarloRunner:
         event_exit.terminal = True
         
         sol = solve_ivp(self.solver.get_derivatives, (0, n_max), y0, 
-                        events=event_exit, rtol=1e-6, atol=1e-8)
+                        events=event_exit, rtol=1e-8, atol=1e-8)
         
         # If it hit epsilon=1 within the 40-70 e-fold window
         if sol.t_events[0].size > 0:
@@ -74,32 +75,48 @@ class MonteCarloRunner:
         
         return None, None
     
-    def run_single_backwards(self, m_order, n_obs_range=(40, 70)):
+    def run_single_backwards(self, m_order, n_obs_range=(50, 60)):
         """
-        Notebook 2 Logic: Forward-then-Backward.
-        Finds the end of inflation first, then rewinds to N_obs.
+        Step-by-step recreation of Chen et al. (2004):
+        1. Search forward up to 1000 e-folds for the end of inflation.
+        2. Identify the exact N where epsilon = 1.
+        3. Rewind to the observation window (e.g., N_end - 60).
         """
+        # Initialize with Chen-style scaling priors
         y0 = self.generate_random_priors(m_order)
         
+        # Define the Graceful Exit event (epsilon = 1)
         def event_end(t, y): return y[0] - 1.0
         event_end.terminal = True
         
-        # Forward search for epsilon=1
-        sol_fwd = solve_ivp(self.solver.get_derivatives, (0, -1000), y0, 
-                            events=event_end, rtol=1e-6)
-        
+        # 1. THE 1,000 E-FOLD SEARCH
+        # We allow a long duration to ensure the chaos has collapsed to the attractor
+        sol_fwd = solve_ivp(self.solver.get_derivatives, (0, 1000), y0, 
+                            events=event_end, rtol=1e-8, atol=1e-10)
+    
+        # 2. VALIDATION
         if sol_fwd.t_events[0].size > 0:
+            n_end = sol_fwd.t_events[0][0]
             y_end = sol_fwd.y[:, -1]
-            n_obs = np.random.uniform(*n_obs_range)
-            # Rewind
-            sol_bwd = solve_ivp(self.solver.get_derivatives, (0, n_obs), y_end, rtol=1e-6)
-            return self.solver.compute_observables(sol_bwd.y[:, -1])
+            
+            # 3. THE REWIND
+            # Pick N_obs (usually 50 or 60 e-folds before the end)
+            n_rewind = np.random.uniform(*n_obs_range) if isinstance(n_obs_range, tuple) else n_obs_range
+            
+            # Integrate backwards from N_end to N_obs
+            # We use a negative time span or solve from 0 to n_rewind with reversed derivatives
+            sol_bwd = solve_ivp(self.solver.get_derivatives, (0, -n_rewind), y_end, 
+                                rtol=1e-8, atol=1e-10)
+            
+            y_at_obs = sol_bwd.y[:, -1]
+            return self.solver.compute_observables(y_at_obs)
+            
         return None, None
 
     def run_batch(self, n_sims, m_order, method='stochastic'):
         """
         The Master Batch Controller.
-        method='stochastic' -> The Efstathiou/Kinney Landscape (Forward Search)
+        method='stochastic' -> The Efstathiou Landscape (Forward Search)
         method='backwards'  -> The Chen Modern Reconstruction (Backward Integration)
         """
         results = []
@@ -148,10 +165,11 @@ class MonteCarloRunner:
                 n_end = sol.t_events[0][0]
                 if n_end > n_obs:
                     target_t = n_end - n_obs
-                    # Interpolate or find closest index to N_obs
-                    idx = np.argmin(np.abs(sol.t - target_t))
-                    
-                    y_at_obs = sol.y[:, idx]
+                    # Create interpolation functions for each parameter in y
+                    # This gives us the exact value at target_t, not just the nearest index
+                    interp_func = interp1d(sol.t, sol.y, kind='cubic', axis=1)
+                    y_at_obs = interp_func(target_t)
+                
                     ns, r = self.solver.compute_observables(y_at_obs)
                     results.append([ns, r])
                 

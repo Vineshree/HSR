@@ -238,8 +238,8 @@ def plot_phase_space_flow(solver, eps_range=(0.001, 0.4), sig_range=(-1.0, 1.0))
     plt.xlim(eps_range) # Tighten limits
     plt.ylim(sig_range)
     
-    plt.xlabel(r'Energy Scale $\epsilon$')
-    plt.ylabel(r'Flow Parameter $\sigma$')
+    plt.xlabel(r'd $\epsilon$ /dN')
+    plt.ylabel(r'd $\sigma$ /dN')
     plt.title('ACM Phase Space Flow: The Chaos Collapse Mechanism')
     plt.legend(facecolor='black', labelcolor='white')
     plt.colorbar(strm.lines, label='Flow Velocity')
@@ -284,7 +284,7 @@ def plot_relaxation_time(runner, n_samples=10):
     # We invert the axis to look backward from the end of inflation (N_end = 0)
     plt.gca().invert_xaxis()
     plt.xlabel('E-folds before end of inflation')
-    plt.ylabel(r'Attractor Deviation ($\sigma + 2\epsilon$)')
+    plt.ylabel(r'Attractor Deviation ($\sigma + 2 \epsilon$)')
     plt.title('Stability Analysis: Time Required for Chaos Collapse')
     plt.grid(alpha=0.3)
     plt.legend()
@@ -319,12 +319,12 @@ def plot_stability_velocity(solver, eps_range=(1e-3, 0.4), sig_range=(-1.0, 1.0)
     
     # 3. Analytic Attractor
     plt.plot(e_vec, -2*e_vec, 'cyan', linestyle='--', linewidth=3, 
-             label=r'Analytic Attractor ($\sigma = -2\epsilon$)')
+             label=r'Analytic Attractor ($\sigma = -2 \epsilon$)')
 
     plt.xscale('log')
     plt.colorbar(strm.lines, label='Dynamical Velocity ($|dy/dN|$)')
-    plt.xlabel(r'Energy Scale $\epsilon$')
-    plt.ylabel(r'Flow Parameter $\sigma$')
+    plt.xlabel(r'$\epsilon$')
+    plt.ylabel(r'$\sigma$')
     plt.title('Stability Analysis: Attractor Velocity vs. Chaos Zones')
     plt.grid(True, which='both', linestyle=':', alpha=0.4)
     plt.legend(loc='upper left', facecolor='white', framealpha=1)
