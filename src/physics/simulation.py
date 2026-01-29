@@ -31,9 +31,9 @@ class MonteCarloRunner:
         """Efstathiou (2002) scaling: ranges shrink by factor of 10 for each higher order."""
         y = np.zeros(m_order + 1)
         y[0] = np.random.uniform(0, 0.8)   # epsilon
-        y[1] = np.random.uniform(-0.5, 0.5) # sigma
+        y[1] = np.random.uniform(-0.05, 0.05) # sigma
         
-        current_range = 0.05
+        current_range = 0.005
         for l in range(2, m_order + 1):
             y[l] = np.random.uniform(-current_range, current_range)
             current_range /= 10.0
