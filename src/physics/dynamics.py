@@ -1,4 +1,6 @@
 import numpy as np
+from scipy.integrate import solve_ivp
+
 
 class HSRSolver:
     def __init__(self, c_const=0.0814514):
@@ -96,5 +98,31 @@ class HSRSolver:
             dydN[i + 2] = prefactor * l_val + term_next
             
         return dydN
+    def get_observables(self, sol, n_lookback=55):
+        """Calculates n_s and r at the lookback point."""
+        if sol.t[-1] < n_lookback:
+            return None, None
+        
+        # Measure at N_end - 55
+        n_obs = sol.t[-1] - n_lookback
+        idx = (np.abs(sol.t - n_obs)).argmin()
+        
+        eps_obs = sol.y[0, idx]
+        sig_obs = sol.y[1, idx]
+        
+        ns = 1 + sig_obs
+        r = 16 * eps_obs
+        return ns, r
 
-    
+    def run_stability_check(self, y0, n_max=1000):
+        """Runs a trajectory and flags it as 'Exit' or 'Eternal'."""
+        def exit_event(t, y): return y[0] - 1.0
+        exit_event.terminal = True
+            
+        sol = solve_ivp(self.get_derivatives_acm, (0, n_max), y0, 
+                            events=exit_event, method='Radau')
+            
+        status = "Exit" if sol.status == 1 else "Eternal"
+        ns, r = self.get_observables(sol)
+        return ns, r, status
+        

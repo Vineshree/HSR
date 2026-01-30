@@ -83,7 +83,6 @@ def plot_acm_vs_attractor(results, title="ACM Chaos Collapse vs. Analytic Attrac
     
     Parameters:
     - results: np.array of [ns, r] values
-    - title: Optional string for the plot title
     """
     if len(results) == 0:
         print("No results to plot.")

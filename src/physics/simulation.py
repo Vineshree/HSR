@@ -46,7 +46,7 @@ class MonteCarloRunner:
         """
         y0 = self.generate_random_priors(m_order)
         # We integrate forward from N=0 to N=n_obs
-        sol = solve_ivp(self.solver.get_derivatives, (0, n_obs), y0, rtol=1e-6)
+        sol = solve_ivp(self.solver.get_derivatives, (0, n_obs), y0, rtol=1e-8)
         
         y_final = sol.y[:, -1]
         # Ensure we haven't already ended inflation (epsilon must be < 1)
@@ -116,7 +116,7 @@ class MonteCarloRunner:
     def run_batch(self, n_sims, m_order, method='stochastic'):
         """
         The Master Batch Controller.
-        method='stochastic' -> The Efstathiou Landscape (Forward Search)
+        method='stochastic' -> The Efstathiou/Kinney method (Forward Search)
         method='backwards'  -> The Chen Modern Reconstruction (Backward Integration)
         """
         results = []
@@ -133,7 +133,7 @@ class MonteCarloRunner:
                 
         return np.array(results)
     
-    def run_trajectory(self, y0, method='acm', n_max=100):
+    def run_trajectory(self, y0, method='acm', n_max=1000):
         """Runs a single trajectory using the specified dynamics engine."""
         func = self.solver.get_derivatives_acm if method == 'acm' else self.solver.get_derivatives
         
