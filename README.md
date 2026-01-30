@@ -25,7 +25,7 @@ The framework evolves the slow-roll parameters $\epsilon, \sigma, \lambda_2, \do
 ### Integration Modes
 1.  **Forward Integration**: Direct evolution from initial conditions to a fixed number of e-folds.
 2.  **Backward Integration**: Evolving forward to find the end of inflation ($\epsilon=1$), then "rewinding" back $N_{obs}$ e-folds to calculate observables at the horizon crossing.
-3.  **Algebraic Closure (ACM)**: Uses the physical constraint $dR/dN = R^2/2$ to close the hierarchy, forcing chaotic models to converge onto the Starobinsky/$R^2$ attractor.
+3.  **Algebraic Closure (ACM)**: Uses the physical constraint $dR/dN = R^2/2$ to close the hierarchy, forcing chaotic models to converge onto the $R^2$ attractor.
 
 ---
 
